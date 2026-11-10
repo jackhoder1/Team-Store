@@ -94,8 +94,11 @@ def token_from_client_credentials(client_id: str, client_secret: str) -> str:
                           timeout=15)
         if r.status_code == 200:
             return r.json().get("access_token", "")
+        detail = r.text
+        if "<title>" in detail:  # Shopify sends an HTML error page; keep just its title
+            detail = detail.split("<title>", 1)[1].split("</title>", 1)[0]
         api_state["disabled_reason"] = (f"Shopify wouldn't issue a token from the client ID/secret "
-                                        f"(HTTP {r.status_code}: {r.text[:150]}).")
+                                        f"(HTTP {r.status_code}: {detail.strip()[:150]}).")
     except Exception as e:
         api_state["disabled_reason"] = f"Couldn't reach Shopify to get a token: {e}"
     return ""
@@ -341,8 +344,7 @@ def main():
         except Exception as e:
             notes.append(f"Clipboard copy failed: {e}")
     if api_state["disabled_reason"]:
-        notes.append(api_state["disabled_reason"] + " Used the public website instead.\n"
-                     f"To fix, update the token in {CONFIG_PATH} (or delete that file to be asked again).")
+        notes.append(api_state["disabled_reason"] + " Used the public website for images instead.")
     if missing:
         shown = ", ".join(missing[:10]) + (" ..." if len(missing) > 10 else "")
         notes.append(f"No image found for {len(missing)} item(s): {shown}")
