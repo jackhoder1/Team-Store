@@ -29,7 +29,7 @@ python team_store.py
 2. Build:
 
 ```
-pyinstaller --onefile --windowed --name Team_Store_App --hidden-import token_baked team_store.py
+pyinstaller --onefile --windowed --name Team_Store_App --hidden-import token_baked --icon icon.ico team_store.py
 ```
 
 The .exe ends up in `dist/` and can be shared as-is — nobody gets asked for a token. To change the token, edit `token_baked.py` and rebuild. Anyone who has the .exe can dig the token out of it, so only share it inside the company.
