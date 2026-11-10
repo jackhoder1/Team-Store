@@ -1,5 +1,6 @@
 # Holds the Shopify token - never commit
 team_store_config.json
+token_baked.py
 
 # Output
 *.pdf

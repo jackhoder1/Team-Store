@@ -23,13 +23,16 @@ pip install -r requirements.txt
 python team_store.py
 ```
 
-## Build the .exe
+## Build the .exe (token built in, for sharing)
+
+1. Copy `token_baked.example.py` to `token_baked.py` and paste the real token into it. That file is git-ignored, so the token never goes to GitHub.
+2. Build:
 
 ```
-pyinstaller --onefile --windowed --name Team_Store_App team_store.py
+pyinstaller --onefile --windowed --name Team_Store_App --hidden-import token_baked team_store.py
 ```
 
-The .exe ends up in `dist/`. Put `team_store_config.json` next to it (or let it ask on first run).
+The .exe ends up in `dist/` and can be shared as-is — nobody gets asked for a token. To change the token, edit `token_baked.py` and rebuild. Anyone who has the .exe can dig the token out of it, so only share it inside the company.
 
 ## CSV format
 

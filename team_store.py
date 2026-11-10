@@ -12,7 +12,8 @@ Images come from Shopify (read-only):
 The token is NOT stored in this file. It is read from, in order:
   - the SHOPIFY_TOKEN environment variable
   - team_store_config.json next to this script / the .exe
-If neither has one, the app asks for it once and saves it to that file.
+  - token_baked.py, built into the .exe (git-ignored, see README)
+If none has one, the app asks for it once and saves it to the config file.
 The same token used by the Price Comparator app works here.
 """
 
@@ -68,8 +69,17 @@ def save_config(cfg: dict) -> None:
         print(f"Could not save config: {e}")
 
 
+try:
+    # Baked into the .exe at build time; this file is git-ignored (see README).
+    from token_baked import SHOPIFY_TOKEN as BAKED_TOKEN
+except ImportError:
+    BAKED_TOKEN = ""
+
+
 def get_token(cfg: dict) -> str:
-    token = os.environ.get("SHOPIFY_TOKEN", "").strip() or cfg.get("shopify_token", "").strip()
+    token = (os.environ.get("SHOPIFY_TOKEN", "").strip()
+             or cfg.get("shopify_token", "").strip()
+             or BAKED_TOKEN.strip())
     if token:
         return token
     token = (simpledialog.askstring(
