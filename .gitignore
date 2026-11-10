@@ -1,0 +1,15 @@
+# Holds the Shopify token - never commit
+team_store_config.json
+
+# Output
+*.pdf
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+.venv/

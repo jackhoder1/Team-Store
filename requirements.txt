@@ -1,0 +1,6 @@
+pandas
+pyperclip
+requests
+beautifulsoup4
+reportlab
+pyinstaller
