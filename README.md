@@ -25,7 +25,7 @@ python team_store.py
 
 ## Build the .exe (token built in, for sharing)
 
-1. Copy `token_baked.example.py` to `token_baked.py` and paste the real token into it. That file is git-ignored, so the token never goes to GitHub.
+1. Copy `token_baked.example.py` to `token_baked.py` and fill in the **Client ID** and **Client secret** from the app's Settings page in the Shopify Dev Dashboard. The app swaps them for a fresh access token every run (Shopify's client credentials grant; tokens last ~24h). That file is git-ignored, so the credentials never go to GitHub.
 2. Build:
 
 ```

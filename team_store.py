@@ -9,11 +9,12 @@ Images come from Shopify (read-only):
   1. Shopify Admin GraphQL API, looked up by exact SKU (needs a token)
   2. Fallback: the public rugbyimports.com site search (no token needed)
 
-The token is NOT stored in this file. It is read from, in order:
-  - the SHOPIFY_TOKEN environment variable
-  - team_store_config.json next to this script / the .exe
-  - token_baked.py, built into the .exe (git-ignored, see README)
-If none has one, the app asks for it once and saves it to the config file.
+Credentials are NOT stored in this file. They come from (first found wins):
+  - environment variables, then team_store_config.json next to the .exe,
+    then token_baked.py built into the .exe (git-ignored, see README)
+Either a fixed SHOPIFY_TOKEN, or SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET
+(Dev Dashboard app) which are swapped for a fresh token on every run.
+If none are set, the app asks for a token once and saves it to the config file.
 The same token used by the Price Comparator app works here.
 """
 
@@ -71,17 +72,43 @@ def save_config(cfg: dict) -> None:
 
 try:
     # Baked into the .exe at build time; this file is git-ignored (see README).
-    from token_baked import SHOPIFY_TOKEN as BAKED_TOKEN
+    import token_baked as _baked
 except ImportError:
-    BAKED_TOKEN = ""
+    _baked = None
+
+
+def _setting(cfg: dict, env_key: str, cfg_key: str) -> str:
+    """Env var, then config file, then the baked-in value."""
+    return (os.environ.get(env_key, "").strip()
+            or str(cfg.get(cfg_key, "")).strip()
+            or str(getattr(_baked, env_key, "") or "").strip())
+
+
+def token_from_client_credentials(client_id: str, client_secret: str) -> str:
+    """Dev Dashboard apps: swap client ID + secret for an access token (valid ~24h).
+    A fresh one is fetched every run, so nothing needs refreshing."""
+    try:
+        r = requests.post(f"{STORE_URL}/admin/oauth/access_token",
+                          data={"grant_type": "client_credentials",
+                                "client_id": client_id, "client_secret": client_secret},
+                          timeout=15)
+        if r.status_code == 200:
+            return r.json().get("access_token", "")
+        api_state["disabled_reason"] = (f"Shopify wouldn't issue a token from the client ID/secret "
+                                        f"(HTTP {r.status_code}: {r.text[:150]}).")
+    except Exception as e:
+        api_state["disabled_reason"] = f"Couldn't reach Shopify to get a token: {e}"
+    return ""
 
 
 def get_token(cfg: dict) -> str:
-    token = (os.environ.get("SHOPIFY_TOKEN", "").strip()
-             or cfg.get("shopify_token", "").strip()
-             or BAKED_TOKEN.strip())
+    token = _setting(cfg, "SHOPIFY_TOKEN", "shopify_token")
     if token:
         return token
+    client_id = _setting(cfg, "SHOPIFY_CLIENT_ID", "client_id")
+    client_secret = _setting(cfg, "SHOPIFY_CLIENT_SECRET", "client_secret")
+    if client_id and client_secret:
+        return token_from_client_credentials(client_id, client_secret)
     token = (simpledialog.askstring(
         "Shopify token",
         "Paste the Shopify Admin API token (starts with shpat_).\n"
